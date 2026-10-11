@@ -102,7 +102,7 @@ specify extension enable bug
 
 The extension reads `.specify/extensions/bug/bug-config.yml` (copied from `config-template.yml` on install). Options:
 
-- `auto_create_issue` (`false`) — when `true`, `speckit.bug.assess` files the GitHub issue automatically after writing the assessment. The `--issue` flag overrides this per run.
+- `auto_create_issue` (`true`) — when `true`, `speckit.bug.assess` files the GitHub issue automatically after writing the assessment. Set to `false` to opt out. The `--issue` flag overrides this per run.
 - `branch_prefix` (`"fix"`) — prefix for the fix branch created by `speckit.bug.fix --branch` / `--worktree` (branch is `<prefix>/<slug>`, e.g. `fix/login-timeout`).
 - `default_host` (`"github"`) — Git host used when creating issues/PRs.
 
@@ -128,4 +128,16 @@ This separation keeps triage read-only and lets you decide per bug whether it is
 
 ## Hooks
 
-This extension registers no hooks. The commands are always invoked explicitly by the user.
+This extension registers one hook:
+
+- **`after_bug_assess`** → `speckit.bug.issue` — a **mandatory** (Automatic) hook that files the
+  GitHub issue after `speckit.bug.assess` writes the assessment. It is bound as `optional: false` but
+  gated by the `auto_create_issue` config condition (`config.auto_create_issue == 'true'`), so it only
+  executes when that setting is enabled. With `auto_create_issue: false` (the opt-out — the
+  shipped template defaults to `true`) the condition fails and the hook is skipped, so `assess`
+  only *suggests* the issue step.
+
+This is how the `auto_create_issue` setting takes effect: it is not re-read inline by `assess`. Instead,
+when `auto_create_issue: true`, the installed hook is an Automatic Hook (`optional: false`) that runs
+`speckit.bug.issue` automatically after each assessment. Toggle the setting in
+`.specify/extensions/bug/bug-config.yml` — no reinstall is required.
